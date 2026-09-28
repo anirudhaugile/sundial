@@ -4,7 +4,7 @@ import { AssignmentsList, type AssignmentRow } from "@/components/assignments-li
 import { NewButton } from "@/components/quick-add";
 import { PageHeader } from "@/components/ui";
 import { getCourses, requireProfile } from "@/lib/data/queries";
-import { resolveEstimates } from "@/lib/planner/estimates";
+import { loadCalibration, resolveEstimates } from "@/lib/planner/estimates";
 import { createClient } from "@/lib/supabase/server";
 import { courseLabel } from "@/lib/view";
 
@@ -27,8 +27,9 @@ export default async function AssignmentsPage() {
     getCourses(supabase),
   ]);
   const list = items ?? [];
+  const cal = await loadCalibration(supabase);
   const [estimates, { data: blocks }] = await Promise.all([
-    resolveEstimates(supabase, list),
+    resolveEstimates(supabase, list, { calibration: cal.map }),
     list.length
       ? supabase.from("blocks").select("work_item_id, starts_at, ends_at, status").in("work_item_id", list.map((w) => w.id)).in("status", ["scheduled", "done"])
       : Promise.resolve({ data: [] as { work_item_id: string | null; starts_at: string; ends_at: string; status: string }[] }),
@@ -59,8 +60,9 @@ export default async function AssignmentsPage() {
       origin: e.origin,
       reasoning: e.reasoning,
       plannedMin: planned.get(w.id) ?? 0,
-      doneMin: spent.get(w.id) ?? 0,
-      calibration: null,
+      doneMin: w.actual_minutes ?? spent.get(w.id) ?? 0,
+      estimatedMin: w.estimated_minutes,
+      calibration: e.calibration,
     };
   });
 
@@ -71,7 +73,10 @@ export default async function AssignmentsPage() {
     <div className="mx-auto max-w-3xl">
       <PageHeader
         title="Assignments"
-        subtitle={open.length ? `${open.length} open · about ${Math.round(totalH)} hours of work` : "Everything's done."}
+        subtitle={
+          (open.length ? `${open.length} open · about ${Math.round(totalH)} hours of work` : "Everything's done.") +
+          (cal.total ? ` · estimates calibrated from ${cal.total} completed item${cal.total > 1 ? "s" : ""}` : "")
+        }
         actions={<NewButton type="assignment" label="Assignment" />}
       />
       <AssignmentsList tz={tz} nowISO={now.toUTC().toISO()!} rows={rows} />

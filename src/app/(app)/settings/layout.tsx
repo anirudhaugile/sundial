@@ -6,6 +6,7 @@ const TABS = [
   { href: "/settings/habits", label: "Habits" },
   { href: "/settings/sources", label: "Sources" },
   { href: "/settings/courses", label: "Courses" },
+  { href: "/settings/memory", label: "Memory" },
 ];
 
 export default function SettingsLayout({ children }: LayoutProps<"/settings">) {

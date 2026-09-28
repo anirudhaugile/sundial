@@ -165,6 +165,15 @@ export function schedule(input: SchedulerInput): SchedulerOutput {
     }
   }
 
+  // no-work windows ("no work Friday nights"): closed to assignments, still open to habits
+  for (const w of prefs.noWorkWindows ?? []) {
+    for (const day of days) {
+      if (!w.days.includes(day.dt.weekday)) continue;
+      const e = w.end <= w.start ? day.n : clockIdx(day, w.end); // "18:00–00:00" runs to midnight
+      for (let i = clockIdx(day, w.start); i < e; i++) if (day.slots[i] === FREE) day.slots[i] = BREAK;
+    }
+  }
+
   // 2. habits, highest priority first
   const habits = [...input.habits].sort((a, b) => a.priority - b.priority || a.name.localeCompare(b.name) || a.id.localeCompare(b.id));
   for (const h of habits) {

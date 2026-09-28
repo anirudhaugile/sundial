@@ -8,7 +8,10 @@ export type SchedulerPrefs = {
   maxBlockMin: number; // longest work session
   dailyWorkCapMin: number; // assignment work per day, across all items
   dueBufferHours: number; // aim to finish this long before the deadline
+  noWorkWindows?: NoWorkWindow[]; // recurring times with no assignment work (habits still allowed)
 };
+
+export type NoWorkWindow = { days: number[]; start: string; end: string; label?: string };
 
 export type SchedulerEvent = {
   id: string;

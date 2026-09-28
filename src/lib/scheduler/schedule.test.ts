@@ -271,6 +271,17 @@ describe("scheduler: assignments", () => {
   });
 });
 
+describe("scheduler: no-work windows", () => {
+  it("keeps assignment work out of the window but still places habits there", () => {
+    const prefs = { ...input().prefs, noWorkWindows: [{ days: [5], start: "17:00", end: "23:30", label: "Friday nights" }] };
+    // Fri Oct 2; plenty of work due Saturday so Friday evening would otherwise be used
+    const out = schedule(input({ prefs, habits: [GYM], work: [work("a", "2026-10-03T23:59", 600)], now: at("2026-10-02T16:00"), horizonDays: 2 }));
+    const fridayWork = workFor(out.blocks, "a").filter((b) => local(b.start).weekday === 5);
+    for (const b of fridayWork) expect(local(b.end).toFormat("HH:mm") <= "17:00").toBe(true);
+    expect(out.blocks.some((b) => b.habitId === "gym" && local(b.start).weekday === 5)).toBe(true);
+  });
+});
+
 describe("scheduler: session shape", () => {
   it("never leaves a sliver shorter than the minimum session", () => {
     // 2h15m of work with 2h max sessions would naively leave a 15-minute tail

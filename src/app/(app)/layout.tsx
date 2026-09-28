@@ -1,4 +1,5 @@
 import { redirect } from "next/navigation";
+import { ChatPanel } from "@/components/chat-panel";
 import { ItemEditor } from "@/components/item-editor";
 import { KeyboardShortcuts, MobileTabs, Sidebar } from "@/components/nav";
 import { QuickAdd } from "@/components/quick-add";
@@ -24,6 +25,7 @@ export default async function AppLayout({ children }: LayoutProps<"/">) {
       <KeyboardShortcuts />
       <QuickAdd tz={tz} courses={courses ?? []} />
       <ItemEditor tz={tz} />
+      <ChatPanel aiEnabled={!!process.env.ANTHROPIC_API_KEY} />
     </div>
   );
 }

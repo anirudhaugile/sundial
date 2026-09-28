@@ -20,7 +20,7 @@ function isTyping(target: EventTarget | null) {
   return !!el && (el.isContentEditable || ["INPUT", "TEXTAREA", "SELECT"].includes(el.tagName));
 }
 
-/** Global single-key shortcuts: t w m p a, "," for settings. "/" is handled by the chat panel. */
+/** Global single-key shortcuts: t w m p a, "," for settings. "/" (chat) and "n" (new) live in their components. */
 export function KeyboardShortcuts() {
   const router = useRouter();
   useEffect(() => {

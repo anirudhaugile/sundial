@@ -3,7 +3,7 @@
 import { useOptimistic, useState, useTransition } from "react";
 import { ExternalLink, RotateCcw, Sparkles, Trash2 } from "lucide-react";
 import { DateTime } from "luxon";
-import { clearEstimate, deleteWorkItem, setEstimate, setWorkItemDone } from "@/app/(app)/actions";
+import { clearEstimate, deleteWorkItem, setActualMinutes, setEstimate, setWorkItemDone } from "@/app/(app)/actions";
 import { Checkbox } from "@/components/today-view";
 import { cx, EmptyState, SectionLabel } from "@/components/ui";
 import { formatDue, formatDuration } from "@/lib/time";
@@ -22,6 +22,7 @@ export type AssignmentRow = {
   reasoning: string;
   plannedMin: number;
   doneMin: number;
+  estimatedMin?: number | null;
   calibration: string | null;
 };
 
@@ -137,8 +138,14 @@ function Row({ r, tz, now, done, onToggle }: { r: AssignmentRow; tz: string; now
             </button>
           )
         ) : null}
-        <div className="w-24 text-right text-xs text-muted">
-          {done ? (r.doneMin ? `${formatDuration(r.doneMin)} spent` : "done") : r.plannedMin ? `${formatDuration(r.plannedMin)} planned` : <span className="text-subtle">not planned</span>}
+        <div className="w-28 text-right text-xs text-muted">
+          {done ? (
+            <ActualTime r={r} />
+          ) : r.plannedMin ? (
+            `${formatDuration(r.plannedMin)} planned`
+          ) : (
+            <span className="text-subtle">not planned</span>
+          )}
         </div>
         <div className="flex w-14 justify-end gap-0.5">
         {r.origin === "user" && !done ? (
@@ -154,5 +161,44 @@ function Row({ r, tz, now, done, onToggle }: { r: AssignmentRow; tz: string; now
         </div>
       </div>
     </li>
+  );
+}
+
+/** Finished items: how long it actually took (editable), against what was estimated. */
+function ActualTime({ r }: { r: AssignmentRow }) {
+  const [editing, setEditing] = useState(false);
+  const [value, setValue] = useState(r.doneMin ? String(Math.round((r.doneMin / 60) * 4) / 4) : "");
+  const [, start] = useTransition();
+  if (editing) {
+    return (
+      <form
+        onSubmit={(e) => {
+          e.preventDefault();
+          setEditing(false);
+          const h = value.trim() === "" ? null : Number(value);
+          start(() => setActualMinutes(r.id, h == null ? null : h * 60).then(() => undefined));
+        }}
+        className="flex items-center justify-end gap-1"
+      >
+        <input
+          autoFocus
+          type="number"
+          step="0.25"
+          min="0"
+          value={value}
+          onChange={(e) => setValue(e.target.value)}
+          onBlur={() => setEditing(false)}
+          className="h-7 w-14 rounded-md border border-line-strong bg-surface px-1.5 text-right text-xs tabular-nums focus:border-accent focus:outline-none"
+          aria-label={`Hours actually spent on ${r.title}`}
+        />
+        h
+      </form>
+    );
+  }
+  return (
+    <button onClick={() => setEditing(true)} className="rounded px-1 py-0.5 hover:bg-surface-2 hover:text-fg" title="How long did it actually take?">
+      {r.doneMin ? `${formatDuration(r.doneMin)} spent` : "log time"}
+      {r.estimatedMin ? <span className="block text-[11px] text-subtle">est. {formatDuration(r.estimatedMin)}</span> : null}
+    </button>
   );
 }

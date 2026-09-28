@@ -1,5 +1,5 @@
 begin;
-select plan(12);
+select plan(15);
 
 -- two users; the signup trigger creates their profiles and default habits
 insert into auth.users (id, email) values
@@ -16,6 +16,10 @@ insert into public.source_connections (id, user_id, kind) values
 insert into public.source_secrets (connection_id, user_id, ciphertext) values
   ('20000000-0000-0000-0000-00000000000b', '00000000-0000-0000-0000-00000000000b', 'enc');
 
+insert into public.user_memory (user_id, content) values ('00000000-0000-0000-0000-00000000000b', 'B private fact');
+insert into public.chat_messages (user_id, role, content) values ('00000000-0000-0000-0000-00000000000b', 'user', '"hi"');
+insert into public.tool_calls (user_id, tool_use_id, name, input, status) values ('00000000-0000-0000-0000-00000000000b', 't', 'remember', '{}', 'applied');
+
 -- act as user A
 set local role authenticated;
 select set_config('request.jwt.claims', '{"sub":"00000000-0000-0000-0000-00000000000a","role":"authenticated"}', true);
@@ -24,6 +28,9 @@ select is((select count(*)::int from public.work_items), 0, 'A cannot see B work
 select is((select count(*)::int from public.profiles), 1, 'A sees only own profile');
 select is((select count(*)::int from public.habits), 2, 'A sees only own habits');
 select is((select count(*)::int from public.source_connections), 0, 'A cannot see B sources');
+select is((select count(*)::int from public.user_memory), 0, 'A cannot see B memories');
+select is((select count(*)::int from public.chat_messages), 0, 'A cannot see B chat');
+select is((select count(*)::int from public.tool_calls), 0, 'A cannot see B tool calls');
 select throws_ok($$select * from public.source_secrets$$, '42501', null, 'secrets unreadable by users');
 
 select throws_ok(

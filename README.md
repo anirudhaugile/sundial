@@ -27,6 +27,10 @@ Raising your 6h/day work limit would make room."* — instead of quietly droppin
 |---|---|
 | ![Week](docs/screenshots/week.png) | ![Plan review](docs/screenshots/plan.png) |
 
+| Chat |
+|---|
+| ![Chat panel](docs/screenshots/chat.png) |
+
 | Month (dark) | Today (dark) | Mobile |
 |---|---|---|
 | ![Month](docs/screenshots/month-d.png) | ![Today dark](docs/screenshots/today-d.png) | ![Mobile](docs/screenshots/today-m.png) |
@@ -51,8 +55,9 @@ assignment's content, so an unchanged assignment is never sent twice. My own est
   ("Session 2 of 3 · due Thu 11:59 pm; on track to finish by Wed").
 - **Cost and speed:** scheduling runs in milliseconds, for free, on every edit.
 
-So the model only ever changes *inputs* (an estimate, a preference, a remembered fact). The scheduler
-places blocks. In chat, every change is a visible tool call.
+So the model only ever changes *inputs* (an estimate, a preference, a no-work window, a remembered
+fact). The scheduler places blocks. In chat, every change is a visible, undoable tool call — even
+"no work Friday nights" becomes a scheduler setting rather than a promise the model has to keep.
 
 ## How the scheduler works
 
@@ -135,6 +140,15 @@ screenshots.
 - **Month** — deadlines and planned hours per day.
 - **Plan** — stats, conflicts, editable estimates, and a diff of what changes. Approve or discard.
 - **Settings** — preferences, habits (add, edit, retire), sources, courses.
+- **Chat** (`/`) — "plan my day", "I'm sick Tuesday, reshuffle", "no work Friday nights". Claude
+  works through tools (read schedule, find free time, move a block, mark unavailable, update
+  preferences or habits, set an estimate, remember a fact, re-run the scheduler). Every call shows up
+  as a card; changes apply instantly with **Undo**, and re-planning still produces a proposal to approve.
+- **Memory** — durable facts from chat ("stats psets take me longer") feed every estimate and chat
+  reply; view and delete them in Settings. Saving one refreshes cached AI estimates.
+- **Calibration** — finishing an assignment records estimated vs. actual time (from completed
+  sessions, editable). Each course gets a correction factor, shrunk toward 1× until there's enough
+  history, applied to future AI estimates: *"+20% for this course · calibrated from 2 completed items."*
 - **Keyboard** — `t` today · `w` week · `m` month · `p` plan · `a` assignments · `n` new · `,` settings.
 - Light and true-dark themes (follows the system), fully usable on a phone.
 

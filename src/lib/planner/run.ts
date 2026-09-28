@@ -2,7 +2,7 @@ import "server-only";
 import { DateTime } from "luxon";
 import type { DB } from "@/lib/data/queries";
 import { schedule } from "@/lib/scheduler/schedule";
-import type { FixedBlock, SchedulerInput, SchedulerOutput } from "@/lib/scheduler/types";
+import type { FixedBlock, NoWorkWindow, SchedulerInput, SchedulerOutput } from "@/lib/scheduler/types";
 import { resolveEstimates, type ResolvedEstimate } from "./estimates";
 
 export type PlanSummary = {
@@ -46,7 +46,7 @@ export async function buildSchedulerInput(supabase: DB, userId: string, opts: { 
   ]);
 
   const work = items.data ?? [];
-  const estimates = await resolveEstimates(supabase, work);
+  const estimates = await resolveEstimates(supabase, work, { userId });
 
   const fixedBlocks: FixedBlock[] = (blocks.data ?? [])
     .filter((b) => b.status === "done" || Date.parse(b.ends_at) > now.toMillis())
@@ -72,6 +72,7 @@ export async function buildSchedulerInput(supabase: DB, userId: string, opts: { 
       maxBlockMin: profile.max_block_min,
       dailyWorkCapMin: profile.daily_work_cap_min,
       dueBufferHours: profile.due_buffer_hours,
+      noWorkWindows: (profile.no_work_windows as NoWorkWindow[] | null) ?? [],
     },
     events: (events.data ?? []).map((e) => ({ id: e.id, start: e.starts_at, end: e.ends_at, busy: e.busy })),
     fixedBlocks,

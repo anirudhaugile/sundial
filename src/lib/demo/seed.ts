@@ -77,7 +77,7 @@ export async function seedDemo(db: DB, password: string) {
   };
 
   // clean slate (children cascade from these)
-  for (const t of ["plan_runs", "blocks", "events", "work_items", "courses", "habits", "source_connections"] as const) {
+  for (const t of ["plan_runs", "blocks", "events", "work_items", "courses", "habits", "source_connections", "chat_messages", "tool_calls", "user_memory"] as const) {
     await db.from(t).delete().eq("user_id", userId);
   }
   await db
@@ -134,6 +134,8 @@ export async function seedDemo(db: DB, password: string) {
         url: null,
         status: done ? "done" : "open",
         completed_at: done ? at(s.day, "20:00") : null,
+        estimated_minutes: done ? s.hours * 60 : null,
+        actual_minutes: done ? (s as { actual: number }).actual * 60 : null,
       },
     };
   });
@@ -238,6 +240,41 @@ export async function seedDemo(db: DB, password: string) {
     model: "claude-opus-5",
   });
   await createProposal(db, userId, "cron");
+
+  // an example exchange so the chat panel isn't empty; the memory it created is real
+  const fact = "Statistics problem sets take Alex longer than average.";
+  await db.from("user_memory").insert({ user_id: userId, content: fact, source: "chat", created_at: at(-2, "21:10") });
+  await db.from("tool_calls").insert({
+    user_id: userId,
+    tool_use_id: "demo_tu_1",
+    name: "remember",
+    input: { fact },
+    result: { saved: true },
+    summary: `Remembered: “${fact}”`,
+    status: "applied",
+    undo: null,
+    created_at: at(-2, "21:10"),
+  });
+  const tick = (n: number) => DateTime.fromISO(at(-2, "21:09")).plus({ seconds: n * 7 }).toUTC().toISO()!;
+  await db.from("chat_messages").insert([
+    { user_id: userId, role: "user", content: "stats psets always take me longer than you think", created_at: tick(1) },
+    {
+      user_id: userId,
+      role: "assistant",
+      content: [
+        { type: "text", text: "Noted — I'll keep that in mind for every STAT 400 estimate." },
+        { type: "tool_use", id: "demo_tu_1", name: "remember", input: { fact } },
+      ],
+      created_at: tick(2),
+    },
+    { user_id: userId, role: "user", content: [{ type: "tool_result", tool_use_id: "demo_tu_1", content: '{"saved":true}' }], created_at: tick(3) },
+    {
+      user_id: userId,
+      role: "assistant",
+      content: [{ type: "text", text: "Saved. Your last two problem sets ran about 40% over, so calibration already nudges STAT 400 estimates up; this makes the AI lean the same way." }],
+      created_at: tick(4),
+    },
+  ]);
 
   return userId;
 }

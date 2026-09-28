@@ -38,3 +38,17 @@ export async function createTestUser(db: ReturnType<typeof adminDb>) {
   if (error) throw error;
   return data.user!.id;
 }
+
+/** A client signed in as a fresh user, so RLS applies exactly as in the app. */
+export async function userSession(admin: ReturnType<typeof adminDb>) {
+  const email = `chat+${Date.now()}${Math.random().toString(36).slice(2, 6)}@sundial.test`;
+  const password = `pw-${Math.random().toString(36).slice(2)}-A1`;
+  const { data, error } = await admin.auth.admin.createUser({ email, password, email_confirm: true });
+  if (error) throw error;
+  const client = createClient<Database>(process.env.NEXT_PUBLIC_SUPABASE_URL!, process.env.NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY!, {
+    auth: { persistSession: false, autoRefreshToken: false },
+  });
+  const { error: se } = await client.auth.signInWithPassword({ email, password });
+  if (se) throw se;
+  return { client, userId: data.user!.id };
+}

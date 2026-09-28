@@ -147,12 +147,19 @@ export async function ensureEstimates(db: DB, userId: string, opts: { estimator?
     description: i.description,
   }));
 
+  // durable facts from chat ("stats psets take me longer") shape every estimate
+  let memories = opts.memories;
+  if (!memories) {
+    const { data } = await db.from("user_memory").select("content").eq("user_id", userId).order("created_at").limit(40);
+    memories = (data ?? []).map((m) => m.content);
+  }
+
   let saved = 0;
   for (let k = 0; k < inputs.length; k += BATCH) {
     const chunk = inputs.slice(k, k + BATCH);
     let raw: Estimate[] = [];
     try {
-      raw = await estimator(chunk, { memories: opts.memories ?? [] });
+      raw = await estimator(chunk, { memories });
     } catch (e) {
       // estimates are best-effort: the planner falls back to defaults
       if (!(e instanceof Anthropic.APIError)) throw e;

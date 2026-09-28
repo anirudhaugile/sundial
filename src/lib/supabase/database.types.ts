@@ -54,6 +54,19 @@ isOneToOne: false
       referencedColumns: ["id","user_id"]
     }
                   ]
+                },"chat_messages": {
+                  Row: {
+                    "content": NonNullable<Json>,"created_at": string,"id": string,"role": string,"user_id": string
+                  }
+                  Insert: {
+                    "content": NonNullable<Json>,"created_at"?: string,"id"?: string,"role": string,"user_id": string
+                  }
+                  Update: {
+                    "content"?: NonNullable<Json>,"created_at"?: string,"id"?: string,"role"?: string,"user_id"?: string
+                  }
+                  Relationships: [
+                    
+                  ]
                 },"courses": {
                   Row: {
                     "code": string | null,"color": string,"created_at": string,"external_id": string | null,"id": string,"name": string,"source": string,"user_id": string
@@ -158,13 +171,13 @@ isOneToOne: false
                   ]
                 },"profiles": {
                   Row: {
-                    "created_at": string,"daily_work_cap_min": number,"day_end": string,"day_start": string,"display_name": string | null,"due_buffer_hours": number,"horizon_days": number,"id": string,"is_demo": boolean,"max_block_min": number,"min_block_min": number,"timezone": string
+                    "created_at": string,"daily_work_cap_min": number,"day_end": string,"day_start": string,"display_name": string | null,"due_buffer_hours": number,"horizon_days": number,"id": string,"is_demo": boolean,"max_block_min": number,"min_block_min": number,"no_work_windows": NonNullable<Json>,"timezone": string
                   }
                   Insert: {
-                    "created_at"?: string,"daily_work_cap_min"?: number,"day_end"?: string,"day_start"?: string,"display_name"?: string | null,"due_buffer_hours"?: number,"horizon_days"?: number,"id": string,"is_demo"?: boolean,"max_block_min"?: number,"min_block_min"?: number,"timezone"?: string
+                    "created_at"?: string,"daily_work_cap_min"?: number,"day_end"?: string,"day_start"?: string,"display_name"?: string | null,"due_buffer_hours"?: number,"horizon_days"?: number,"id": string,"is_demo"?: boolean,"max_block_min"?: number,"min_block_min"?: number,"no_work_windows"?: NonNullable<Json>,"timezone"?: string
                   }
                   Update: {
-                    "created_at"?: string,"daily_work_cap_min"?: number,"day_end"?: string,"day_start"?: string,"display_name"?: string | null,"due_buffer_hours"?: number,"horizon_days"?: number,"id"?: string,"is_demo"?: boolean,"max_block_min"?: number,"min_block_min"?: number,"timezone"?: string
+                    "created_at"?: string,"daily_work_cap_min"?: number,"day_end"?: string,"day_start"?: string,"display_name"?: string | null,"due_buffer_hours"?: number,"horizon_days"?: number,"id"?: string,"is_demo"?: boolean,"max_block_min"?: number,"min_block_min"?: number,"no_work_windows"?: NonNullable<Json>,"timezone"?: string
                   }
                   Relationships: [
                     
@@ -220,15 +233,41 @@ isOneToOne: false
       referencedColumns: ["id","user_id"]
     }
                   ]
-                },"work_items": {
+                },"tool_calls": {
                   Row: {
-                    "completed_at": string | null,"content_hash": string | null,"course_id": string | null,"created_at": string,"description": string | null,"due_at": string | null,"external_id": string | null,"id": string,"kind": string,"planned_for": string | null,"points": number | null,"removed_at": string | null,"source": string,"status": string,"title": string,"updated_at": string,"url": string | null,"user_id": string
+                    "created_at": string,"id": string,"input": NonNullable<Json>,"name": string,"result": Json | null,"status": string,"summary": string | null,"tool_use_id": string,"undo": Json | null,"user_id": string
                   }
                   Insert: {
-                    "completed_at"?: string | null,"content_hash"?: string | null,"course_id"?: string | null,"created_at"?: string,"description"?: string | null,"due_at"?: string | null,"external_id"?: string | null,"id"?: string,"kind"?: string,"planned_for"?: string | null,"points"?: number | null,"removed_at"?: string | null,"source"?: string,"status"?: string,"title": string,"updated_at"?: string,"url"?: string | null,"user_id": string
+                    "created_at"?: string,"id"?: string,"input": NonNullable<Json>,"name": string,"result"?: Json | null,"status": string,"summary"?: string | null,"tool_use_id": string,"undo"?: Json | null,"user_id": string
                   }
                   Update: {
-                    "completed_at"?: string | null,"content_hash"?: string | null,"course_id"?: string | null,"created_at"?: string,"description"?: string | null,"due_at"?: string | null,"external_id"?: string | null,"id"?: string,"kind"?: string,"planned_for"?: string | null,"points"?: number | null,"removed_at"?: string | null,"source"?: string,"status"?: string,"title"?: string,"updated_at"?: string,"url"?: string | null,"user_id"?: string
+                    "created_at"?: string,"id"?: string,"input"?: NonNullable<Json>,"name"?: string,"result"?: Json | null,"status"?: string,"summary"?: string | null,"tool_use_id"?: string,"undo"?: Json | null,"user_id"?: string
+                  }
+                  Relationships: [
+                    
+                  ]
+                },"user_memory": {
+                  Row: {
+                    "content": string,"created_at": string,"id": string,"source": string,"user_id": string
+                  }
+                  Insert: {
+                    "content": string,"created_at"?: string,"id"?: string,"source"?: string,"user_id": string
+                  }
+                  Update: {
+                    "content"?: string,"created_at"?: string,"id"?: string,"source"?: string,"user_id"?: string
+                  }
+                  Relationships: [
+                    
+                  ]
+                },"work_items": {
+                  Row: {
+                    "actual_minutes": number | null,"completed_at": string | null,"content_hash": string | null,"course_id": string | null,"created_at": string,"description": string | null,"due_at": string | null,"estimated_minutes": number | null,"external_id": string | null,"id": string,"kind": string,"planned_for": string | null,"points": number | null,"removed_at": string | null,"source": string,"status": string,"title": string,"updated_at": string,"url": string | null,"user_id": string
+                  }
+                  Insert: {
+                    "actual_minutes"?: number | null,"completed_at"?: string | null,"content_hash"?: string | null,"course_id"?: string | null,"created_at"?: string,"description"?: string | null,"due_at"?: string | null,"estimated_minutes"?: number | null,"external_id"?: string | null,"id"?: string,"kind"?: string,"planned_for"?: string | null,"points"?: number | null,"removed_at"?: string | null,"source"?: string,"status"?: string,"title": string,"updated_at"?: string,"url"?: string | null,"user_id": string
+                  }
+                  Update: {
+                    "actual_minutes"?: number | null,"completed_at"?: string | null,"content_hash"?: string | null,"course_id"?: string | null,"created_at"?: string,"description"?: string | null,"due_at"?: string | null,"estimated_minutes"?: number | null,"external_id"?: string | null,"id"?: string,"kind"?: string,"planned_for"?: string | null,"points"?: number | null,"removed_at"?: string | null,"source"?: string,"status"?: string,"title"?: string,"updated_at"?: string,"url"?: string | null,"user_id"?: string
                   }
                   Relationships: [
                     {

@@ -5,6 +5,7 @@ import { z } from "zod";
 import { createClient } from "@/lib/supabase/server";
 import { requireProfile } from "@/lib/data/queries";
 import { contentHash } from "@/lib/hash";
+import { resolveEstimates } from "@/lib/planner/estimates";
 import { fromLocalInput } from "@/lib/time";
 
 export type ActionResult = { ok: true; id?: string } | { ok: false, error: string };
@@ -125,24 +126,47 @@ export async function createEntry(input: EntryInput): Promise<ActionResult> {
   return error ? fail(error.message) : done(data.id);
 }
 
-/** Check a work item off (or reopen it). Finishing an item frees its future, unlocked blocks. */
+/**
+ * Check a work item off (or reopen it). Finishing an item frees its future, unlocked
+ * blocks, counts past sessions as done, and records estimated vs. actual time for calibration.
+ */
 export async function setWorkItemDone(id: string, isDone: boolean): Promise<ActionResult> {
   const supabase = await createClient();
+  const now = new Date().toISOString();
+  if (!isDone) {
+    const { error } = await supabase.from("work_items").update({ status: "open", completed_at: null }).eq("id", id);
+    return error ? fail(error.message) : done();
+  }
+  const { user } = await requireProfile(supabase);
+  const { data: item } = await supabase.from("work_items").select("*").eq("id", id).single();
+  if (!item) return fail("Not found");
+
+  // sessions you had planned before now are assumed done; future ones are released
+  await supabase.from("blocks").update({ status: "done", completed_at: now }).eq("work_item_id", id).eq("status", "scheduled").lt("ends_at", now);
+  await supabase.from("blocks").delete().eq("work_item_id", id).eq("status", "scheduled").eq("locked", false).gt("starts_at", now);
+
+  const { data: doneBlocks } = await supabase.from("blocks").select("starts_at, ends_at").eq("work_item_id", id).eq("status", "done");
+  const spent = Math.round((doneBlocks ?? []).reduce((m, b) => m + (Date.parse(b.ends_at) - Date.parse(b.starts_at)) / 60000, 0));
+  const est = (await resolveEstimates(supabase, [item], { userId: user.id })).get(id);
+
   const { error } = await supabase
     .from("work_items")
-    .update({ status: isDone ? "done" : "open", completed_at: isDone ? new Date().toISOString() : null })
+    .update({
+      status: "done",
+      completed_at: now,
+      estimated_minutes: est ? Math.round(est.baseHours * 60) : null,
+      actual_minutes: item.actual_minutes ?? (spent > 0 ? spent : null),
+    })
     .eq("id", id);
-  if (error) return fail(error.message);
-  if (isDone) {
-    await supabase
-      .from("blocks")
-      .delete()
-      .eq("work_item_id", id)
-      .eq("status", "scheduled")
-      .eq("locked", false)
-      .gt("starts_at", new Date().toISOString());
-  }
-  return done();
+  return error ? fail(error.message) : done();
+}
+
+/** Correct how long something actually took (feeds calibration). */
+export async function setActualMinutes(id: string, minutes: number | null): Promise<ActionResult> {
+  if (minutes != null && !(minutes >= 0 && minutes <= 6000)) return fail("That's not a plausible duration");
+  const supabase = await createClient();
+  const { error } = await supabase.from("work_items").update({ actual_minutes: minutes == null ? null : Math.round(minutes) }).eq("id", id);
+  return error ? fail(error.message) : done();
 }
 
 export async function setBlockStatus(id: string, status: "scheduled" | "done" | "skipped"): Promise<ActionResult> {

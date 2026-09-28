@@ -87,6 +87,7 @@ export default async function PlanPage() {
         placedMin: i.placedMin,
         startBy: i.startBy,
         status: i.status,
+        calibration: i.estimate.calibration ?? null,
       };
     });
 
