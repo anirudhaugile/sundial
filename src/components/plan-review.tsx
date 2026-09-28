@@ -46,6 +46,7 @@ const ORIGIN_LABEL = { user: "yours", llm: "AI", default: "default" } as const;
 export function PlanReview({ tz, nowISO, runId, createdAt, blocks, removed, conflicts, items, stats, aiEnabled }: Props) {
   const [pending, start] = useTransition();
   const [error, setError] = useState<string | null>(null);
+  const [showAll, setShowAll] = useState(false);
   const now = DateTime.fromISO(nowISO).setZone(tz);
   const run = (fn: () => Promise<{ ok: boolean; error?: string; warning?: string }>) =>
     start(async () => {
@@ -71,17 +72,19 @@ export function PlanReview({ tz, nowISO, runId, createdAt, blocks, removed, conf
   const isRoutine = (b: (typeof blocks)[number]) => b.kind === "habit" && !/Shortened|Moved/.test(b.reasoning ?? "");
   const sortedDays = [...days.entries()].sort(([a], [b]) => a.localeCompare(b));
   // consecutive days that only hold routine habits collapse into one line
-  type Group = { kind: "day"; day: string; added: typeof blocks; removed: RemovedRow[] } | { kind: "routine"; from: string; to: string; names: string[] };
+  type Group = { kind: "day"; day: string; added: typeof blocks; removed: RemovedRow[] } | { kind: "routine"; from: string; to: string; names: string[]; kept: number };
   const groups: Group[] = [];
   for (const [day, g] of sortedDays) {
-    const quiet = !g.removed.length && g.added.every(isRoutine);
+    const quiet = !g.removed.length && g.added.every((b) => isRoutine(b) || (!showAll && b.unchanged));
     const last = groups[groups.length - 1];
     if (quiet) {
-      const names = [...new Set(g.added.map((b) => b.title))];
+      const names = [...new Set(g.added.filter(isRoutine).map((b) => b.title))];
+      const kept = g.added.filter((b) => !isRoutine(b)).length;
       if (last?.kind === "routine") {
         last.to = day;
+        last.kept += kept;
         for (const n of names) if (!last.names.includes(n)) last.names.push(n);
-      } else groups.push({ kind: "routine", from: day, to: day, names });
+      } else groups.push({ kind: "routine", from: day, to: day, names, kept });
     } else groups.push({ kind: "day", day, ...g });
   }
 
@@ -190,7 +193,7 @@ export function PlanReview({ tz, nowISO, runId, createdAt, blocks, removed, conf
 
       <section className="mb-10">
         <SectionLabel>Estimates</SectionLabel>
-        {!aiEnabled ? (
+        {!aiEnabled && items.some((i) => i.origin === "default") ? (
           <p className="mb-2 px-1 text-xs text-muted">
             AI estimates are off (no Anthropic API key configured), so these are rough defaults. Click any number to set your own.
           </p>
@@ -205,7 +208,15 @@ export function PlanReview({ tz, nowISO, runId, createdAt, blocks, removed, conf
       </section>
 
       <section>
-        <SectionLabel>Proposed schedule</SectionLabel>
+        <SectionLabel
+          action={
+            <button onClick={() => setShowAll(!showAll)} className="text-xs text-muted hover:text-fg">
+              {showAll ? "Show changes only" : "Show full schedule"}
+            </button>
+          }
+        >
+          {showAll ? "Proposed schedule" : "What changes"}
+        </SectionLabel>
         {sortedDays.length ? (
           <div className="flex flex-col gap-6">
             {groups.map((g) =>
@@ -216,7 +227,9 @@ export function PlanReview({ tz, nowISO, runId, createdAt, blocks, removed, conf
                     {g.to !== g.from ? ` – ${DateTime.fromISO(g.to, { zone: tz }).toFormat("ccc LLL d")}` : ""}
                   </span>
                   {" · "}
-                  {g.names.join(" and ")} at the usual times. No assignment work needed.
+                  {g.kept
+                    ? `No changes. ${g.kept} work session${g.kept > 1 ? "s" : ""} stay where they are${g.names.length ? `; ${g.names.join(" and ")} as usual` : ""}.`
+                    : `${g.names.join(" and ")} at the usual times. No assignment work needed.`}
                 </p>
               ) : (
               <div key={g.day}>{renderDay(g.day, g.added, g.removed)}</div>

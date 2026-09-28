@@ -1,11 +1,12 @@
 // Dev helper: sign in via local Mailpit magic link, then screenshot routes.
-// usage: node scripts/e2e/shoot.mjs <email> <outDir> /today /week ...  [--mobile] [--dark]
+// usage: node scripts/e2e/shoot.mjs <email|demo> <outDir> /today /week ...  [--mobile] [--dark]
 import { chromium } from "playwright";
 
 const [email, outDir, ...rest] = process.argv.slice(2);
 const routes = rest.filter((r) => r.startsWith("/"));
 const mobile = rest.includes("--mobile");
 const dark = rest.includes("--dark");
+const viewportOnly = rest.includes("--viewport");
 const base = process.env.BASE_URL ?? "http://localhost:3000";
 
 const browser = await chromium.launch();
@@ -36,14 +37,15 @@ async function magicLink() {
   throw new Error("no email");
 }
 
-await page.goto(await magicLink());
+if (email === "demo") await page.goto(`${base}/demo`);
+else await page.goto(await magicLink());
 await page.waitForURL("**/today");
 for (const r of routes) {
   await page.goto(base + r);
   await page.waitForLoadState("networkidle");
   await page.waitForTimeout(400);
   const name = r.replace(/\//g, "_").replace(/[?&=]/g, "-") || "_root";
-  await page.screenshot({ path: `${outDir}/${name}${mobile ? "-m" : ""}${dark ? "-d" : ""}.png`, fullPage: true });
+  await page.screenshot({ path: `${outDir}/${name}${mobile ? "-m" : ""}${dark ? "-d" : ""}.png`, fullPage: !viewportOnly });
 }
 await browser.close();
 console.log("shots done");

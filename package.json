@@ -13,7 +13,8 @@
     "test:db": "supabase test db",
     "db:reset": "supabase db reset",
     "db:types": "supabase gen types typescript --local > src/lib/supabase/database.types.ts",
-    "e2e:login": "node scripts/e2e/login.mjs"
+    "e2e:login": "node scripts/e2e/login.mjs",
+    "seed:demo": "node -e \"const s=require('fs').readFileSync('.env.local','utf8').match(/^CRON_SECRET=(.*)$/m)[1];fetch('http://localhost:3000/api/cron/demo-reset',{headers:{authorization:'Bearer '+s}}).then(r=>r.text()).then(console.log)\""
   },
   "dependencies": {
     "@anthropic-ai/sdk": "^0.128.0",

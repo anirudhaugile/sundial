@@ -272,16 +272,20 @@ export function schedule(input: SchedulerInput): SchedulerOutput {
       let s = run.s;
       while (job.remaining > 0 && s < run.e) {
         const capLeft = Math.min(prefs.dailyWorkCapMin - day.workUsed, perItemDayCap - (day.perItem.get(job.id) ?? 0));
-        const want = Math.min(run.e - s, maxSlots, job.remaining / SLOT_MIN, Math.floor(capLeft / SLOT_MIN));
+        let want = Math.min(run.e - s, maxSlots, job.remaining / SLOT_MIN, Math.floor(capLeft / SLOT_MIN));
         if (want <= 0) return;
-        const last = job.remaining / SLOT_MIN <= want; // the final piece may be shorter than the minimum
-        if (want < minSlots && !last) break;
+        if (want < minSlots) {
+          // a short leftover becomes one full minimum-length session rather than a 15-minute sliver
+          const fits = run.e - s >= minSlots && capLeft >= minSlots * SLOT_MIN;
+          if (job.remaining / SLOT_MIN <= want && fits) want = minSlots;
+          else break;
+        }
         for (let i = s; i < s + want; i++) day.slots[i] = BUSY;
         if (s + want < day.n && day.slots[s + want] === FREE) day.slots[s + want] = BREAK;
         const min = want * SLOT_MIN;
         day.workUsed += min;
         day.perItem.set(job.id, (day.perItem.get(job.id) ?? 0) + min);
-        job.remaining -= min;
+        job.remaining = Math.max(0, job.remaining - min);
         const block: ProposedBlock = {
           kind: "work",
           workItemId: job.id,

@@ -271,6 +271,15 @@ describe("scheduler: assignments", () => {
   });
 });
 
+describe("scheduler: session shape", () => {
+  it("never leaves a sliver shorter than the minimum session", () => {
+    // 2h15m of work with 2h max sessions would naively leave a 15-minute tail
+    const out = schedule(input({ work: [work("a", "2026-10-03T23:59", 135)] }));
+    for (const b of workFor(out.blocks, "a")) expect(mins(b)).toBeGreaterThanOrEqual(30);
+    expect(total(workFor(out.blocks, "a"))).toBe(150);
+  });
+});
+
 describe("scheduler: invariants", () => {
   it("never overlaps events, fixed blocks, or itself in a busy realistic week", () => {
     const events = [];
@@ -291,7 +300,9 @@ describe("scheduler: invariants", () => {
     // every assignment minute is either placed or reported
     for (const it of out.items) {
       const short = out.conflicts.filter((c) => c.workItemId === it.workItemId && c.severity === "error").reduce((m, c) => m + c.shortfallMin, 0);
-      expect(it.placedMin + short).toBe(it.remainingMin);
+      // placed or reported; a short leftover may round up to one minimum-length session
+      expect(it.placedMin + short).toBeGreaterThanOrEqual(it.remainingMin);
+      expect(it.placedMin + short).toBeLessThan(it.remainingMin + 30);
     }
   });
 

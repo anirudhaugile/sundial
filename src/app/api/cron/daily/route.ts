@@ -1,5 +1,6 @@
 import { NextResponse, type NextRequest } from "next/server";
 import { serverEnv } from "@/lib/env";
+import { seedDemo } from "@/lib/demo/seed";
 import { ensureEstimates } from "@/lib/llm/estimate";
 import { createProposal } from "@/lib/planner/run";
 import { syncUser } from "@/lib/sources/sync";
@@ -32,5 +33,15 @@ export async function GET(request: NextRequest) {
       report.push({ user: id.slice(0, 8), error: e instanceof Error ? e.message : String(e) });
     }
   }
-  return NextResponse.json({ ok: true, users: report.length, report });
+  // keep the public demo fresh: dates are relative to today, and visitors may have changed things
+  let demo = "skipped";
+  if (process.env.DEMO_USER_PASSWORD) {
+    try {
+      await seedDemo(db, serverEnv.demoPassword);
+      demo = "reset";
+    } catch (e) {
+      demo = e instanceof Error ? e.message : "failed";
+    }
+  }
+  return NextResponse.json({ ok: true, users: report.length, report, demo });
 }
