@@ -1,5 +1,6 @@
 import { NextResponse, type NextRequest } from "next/server";
 import { serverEnv } from "@/lib/env";
+import { ensureEstimates } from "@/lib/llm/estimate";
 import { createProposal } from "@/lib/planner/run";
 import { syncUser } from "@/lib/sources/sync";
 import { createAdminClient } from "@/lib/supabase/admin";
@@ -19,6 +20,7 @@ export async function GET(request: NextRequest) {
   for (const { id } of users ?? []) {
     try {
       const sync = await syncUser(db, id);
+      await ensureEstimates(db, id);
       const { data: pending } = await db.from("plan_runs").select("trigger").eq("user_id", id).eq("status", "proposed").maybeSingle();
       let planned = false;
       if (!pending || pending.trigger === "cron") {

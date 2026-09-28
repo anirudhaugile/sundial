@@ -38,11 +38,12 @@ type Props = {
   conflicts: ConflictRow[];
   items: PlanItemRow[];
   stats: { workMin: number; habitMin: number; days: number };
+  aiEnabled: boolean;
 };
 
 const ORIGIN_LABEL = { user: "yours", llm: "AI", default: "default" } as const;
 
-export function PlanReview({ tz, nowISO, runId, createdAt, blocks, removed, conflicts, items, stats }: Props) {
+export function PlanReview({ tz, nowISO, runId, createdAt, blocks, removed, conflicts, items, stats, aiEnabled }: Props) {
   const [pending, start] = useTransition();
   const [error, setError] = useState<string | null>(null);
   const now = DateTime.fromISO(nowISO).setZone(tz);
@@ -189,6 +190,11 @@ export function PlanReview({ tz, nowISO, runId, createdAt, blocks, removed, conf
 
       <section className="mb-10">
         <SectionLabel>Estimates</SectionLabel>
+        {!aiEnabled ? (
+          <p className="mb-2 px-1 text-xs text-muted">
+            AI estimates are off (no Anthropic API key configured), so these are rough defaults. Click any number to set your own.
+          </p>
+        ) : null}
         <Card className="divide-y divide-line">
           {items.length ? (
             items.map((it) => <EstimateRow key={it.id} it={it} tz={tz} now={now} disabled={pending} onSet={(h) => run(() => setEstimateAndReplan(it.id, h))} />)

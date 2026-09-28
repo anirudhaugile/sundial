@@ -105,6 +105,7 @@ export default async function PlanPage() {
         conflicts={conflictRows}
         items={planItems}
         stats={summary.stats}
+        aiEnabled={!!process.env.ANTHROPIC_API_KEY}
       />
     </div>
   );
