@@ -19,18 +19,19 @@ const context = await browser.newContext({
 });
 const page = await context.newPage();
 
-async function magicLink() {
+async function signInWithCode() {
   const since = Date.now();
   await page.goto(`${base}/login`);
   await page.fill("#email", email);
-  await page.click("form button");
+  await page.getByRole("button", { name: "Email me a sign-in code" }).click();
   await page.getByText("Check your inbox").waitFor({ timeout: 10000 });
   for (let i = 0; i < 30; i++) {
     const list = await (await fetch("http://127.0.0.1:54324/api/v1/search?query=" + encodeURIComponent("to:" + email))).json();
     const msg = list.messages?.find((m) => Date.parse(m.Created) >= since - 2000);
     if (msg) {
       const full = await (await fetch(`http://127.0.0.1:54324/api/v1/message/${msg.ID}`)).json();
-      return full.Text.match(/https?:\/\/\S+/)[0];
+      await page.fill("#token", full.Text.match(/\b(\d{6})\b/)[1]); // auto-submits
+      return;
     }
     await new Promise((r) => setTimeout(r, 400));
   }
@@ -38,7 +39,7 @@ async function magicLink() {
 }
 
 if (email === "demo") await page.goto(`${base}/demo`);
-else await page.goto(await magicLink());
+else await signInWithCode();
 await page.waitForURL("**/today");
 for (const r of routes) {
   await page.goto(base + r);

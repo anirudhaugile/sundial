@@ -107,7 +107,7 @@ flowchart LR
 
   subgraph Supabase
     DB[(Postgres + RLS)]
-    AUTH[Auth · magic link]
+    AUTH[Auth · email code]
   end
 
   SYNC --> DB
@@ -117,7 +117,7 @@ flowchart LR
 ```
 
 **Stack:** Next.js 16 (App Router, server actions) · TypeScript · Tailwind v4 · Supabase (Postgres,
-auth, row-level security) · Anthropic API · Vercel (hosting and cron) · Vitest · Playwright for
+email-code auth, row-level security) · Anthropic API · Vercel (hosting and cron) · Vitest · Playwright for
 screenshots.
 
 **Data model highlights**
@@ -167,7 +167,7 @@ npm run dev
 npm run seed:demo                # optional: the demo account, then open /demo
 ```
 
-Magic-link emails land in Mailpit at http://127.0.0.1:54324. Without `ANTHROPIC_API_KEY` the app
+Sign-in codes land in Mailpit at http://127.0.0.1:54324. `npm run e2e:login` exercises the whole flow. Without `ANTHROPIC_API_KEY` the app
 still works, using rough default estimates (and no chat).
 
 **Tests**
@@ -180,8 +180,13 @@ npm run test:db   # RLS tests (pgTAP)
 ## Deploy
 
 1. Create a Supabase project, run `npx supabase link` and `npx supabase db push`.
-2. In Supabase → Authentication → URL configuration, set the Site URL to your domain and add
-   `https://<domain>/auth/callback` as a redirect URL.
+2. In Supabase → Authentication:
+   - **URL Configuration:** set the Site URL to your domain and add `https://<domain>/auth/confirm`
+     as a redirect URL.
+   - **Email Templates:** paste [`supabase/templates/magic_link.html`](supabase/templates/magic_link.html)
+     into both **Magic Link** and **Confirm signup** (subject: "Your Sundial sign-in code").
+     Sign-in uses a 6-digit code, with a link as backup that only signs in when you press
+     *Continue* — so university mail scanners that pre-open links can't use up the token.
 3. Import the repo in Vercel and set the variables from `.env.example` (`CRON_SECRET` protects the
    daily cron in `vercel.json`).
 4. Visit `/demo` once to create the demo account.

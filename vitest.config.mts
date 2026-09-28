@@ -9,5 +9,6 @@ export default defineConfig({
       "server-only": fileURLToPath(new URL("./src/test/empty.ts", import.meta.url)),
     },
   },
-  test: { include: ["src/**/*.test.ts"], environment: "node" },
+  // integration tests talk to local Supabase and run the real scheduler; 5s is too tight under parallel load
+  test: { include: ["src/**/*.test.ts"], environment: "node", testTimeout: 30_000 },
 });

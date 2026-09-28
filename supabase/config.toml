@@ -243,6 +243,16 @@ otp_expiry = 3600
 # sender_name = "Admin"
 
 # Uncomment to customize email template
+# Sign-in email: a 6-digit code plus a scanner-safe link (see supabase/templates/magic_link.html)
+[auth.email.template.magic_link]
+subject = "Your Sundial sign-in code"
+content_path = "./supabase/templates/magic_link.html"
+
+# First-time sign-ins get the confirmation email instead; same code + link
+[auth.email.template.confirmation]
+subject = "Your Sundial sign-in code"
+content_path = "./supabase/templates/magic_link.html"
+
 # [auth.email.template.invite]
 # subject = "You have been invited"
 # content_path = "./supabase/templates/invite.html"
