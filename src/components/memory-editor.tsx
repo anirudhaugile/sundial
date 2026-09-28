@@ -69,7 +69,7 @@ export function MemoryEditor({ memories, windows, calibration }: { memories: Mem
               <div key={i} className="flex items-center gap-3 px-4 py-3 text-sm">
                 <span className="flex-1">
                   {w.label ? <span className="font-medium">{w.label} · </span> : null}
-                  {w.days.map((d) => DAY[d - 1]).join(", ")} {w.start}–{w.end === "00:00" ? "midnight" : w.end}
+                  {w.days.map((d) => DAY[d - 1]).join(", ")} {w.start === "00:00" && w.end === "00:00" ? "all day" : `${w.start}–${w.end === "00:00" ? "midnight" : w.end}`}
                 </span>
                 <button onClick={() => start(() => removeNoWorkWindow(i).then(() => undefined))} className="rounded p-1 text-subtle hover:bg-surface-2 hover:text-danger" aria-label="Remove window">
                   <Trash2 size={13} />

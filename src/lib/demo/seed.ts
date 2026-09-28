@@ -93,6 +93,8 @@ export async function seedDemo(db: DB, password: string) {
       daily_work_cap_min: 360,
       due_buffer_hours: 24,
       horizon_days: 21,
+      // pinned so a freshly created demo user (which gets the weekends-off default) matches the seeded story
+      no_work_windows: [],
     })
     .eq("id", userId);
 

@@ -282,6 +282,22 @@ describe("scheduler: no-work windows", () => {
   });
 });
 
+describe("scheduler: weekends off", () => {
+  it("a full-day Sat/Sun window blocks all weekend work but still places the gym", () => {
+    const prefs = { ...input().prefs, dailyWorkCapMin: 1440, noWorkWindows: [{ days: [6, 7], start: "00:00", end: "00:00", label: "Weekends" }] };
+    // Fri Oct 2 9 am; a big assignment due Monday night would normally spill into the weekend
+    const inp = input({ now: at("2026-10-02T09:00"), horizonDays: 4, prefs, habits: [GYM], work: [work("big", "2026-10-05T23:59", 1200)] });
+    const out = schedule(inp);
+    const weekendWork = workFor(out.blocks, "big").filter((b) => local(b.start).weekday >= 6 || local(b.end).weekday >= 6);
+    expect(weekendWork).toEqual([]);
+    const gymDays = out.blocks.filter((b) => b.habitId === "gym").map((b) => local(b.start).toFormat("ccc"));
+    expect(gymDays).toEqual(["Fri", "Sat", "Sun", "Mon"]);
+    // the work moves to the weekdays around it instead
+    expect(workFor(out.blocks, "big").length).toBeGreaterThan(0);
+    assertNoOverlaps(inp, out.blocks);
+  });
+});
+
 describe("scheduler: session shape", () => {
   it("never leaves a sliver shorter than the minimum session", () => {
     // 2h15m of work with 2h max sessions would naively leave a 15-minute tail

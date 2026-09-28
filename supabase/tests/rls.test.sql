@@ -1,5 +1,5 @@
 begin;
-select plan(15);
+select plan(16);
 
 -- two users; the signup trigger creates their profiles and default habits
 insert into auth.users (id, email) values
@@ -8,6 +8,9 @@ insert into auth.users (id, email) values
 
 select is((select count(*)::int from public.habits where user_id = '00000000-0000-0000-0000-00000000000a'), 2,
   'signup seeds Gym and Internship habits');
+select is((select no_work_windows from public.profiles where id = '00000000-0000-0000-0000-00000000000a'),
+  '[{"days":[6,7],"start":"00:00","end":"00:00","label":"Weekends"}]'::jsonb,
+  'new users start with weekends closed to assignment work');
 
 insert into public.work_items (id, user_id, title) values
   ('10000000-0000-0000-0000-00000000000b', '00000000-0000-0000-0000-00000000000b', 'B secret task');
