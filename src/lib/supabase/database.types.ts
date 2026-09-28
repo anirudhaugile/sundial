@@ -245,7 +245,13 @@ isOneToOne: false
             [_ in never]: never
           }
           Functions: {
-            "is_demo":
+            "approve_plan":
+{ Args: { "run_id": string }; Returns: undefined
+                           },
+"discard_plan":
+{ Args: { "run_id": string }; Returns: undefined
+                           },
+"is_demo":
 { Args: Record<PropertyKey, never>; Returns: boolean
                            }
           }

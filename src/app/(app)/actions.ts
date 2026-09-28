@@ -214,3 +214,31 @@ export async function moveTaskToToday(id: string, today: string): Promise<Action
   const { error } = await supabase.from("work_items").update({ planned_for: today }).eq("id", id);
   return error ? fail(error.message) : done();
 }
+
+/** Save your own estimate without re-planning (applied on the next plan). */
+export async function setEstimate(workItemId: string, hours: number): Promise<ActionResult> {
+  if (!(hours > 0 && hours <= 80)) return fail("Estimate must be between 0.25 and 80 hours");
+  const supabase = await createClient();
+  const { user } = await requireProfile(supabase);
+  const { data: item } = await supabase.from("work_items").select("content_hash").eq("id", workItemId).single();
+  const { error } = await supabase.from("effort_estimates").upsert(
+    {
+      user_id: user.id,
+      work_item_id: workItemId,
+      origin: "user",
+      content_hash: item?.content_hash ?? "",
+      hours: Math.round(hours * 4) / 4,
+      reasoning: "Your estimate.",
+      created_at: new Date().toISOString(),
+    },
+    { onConflict: "work_item_id,origin,content_hash" },
+  );
+  return error ? fail(error.message) : done();
+}
+
+/** Drop your override so the AI (or default) estimate applies again. */
+export async function clearEstimate(workItemId: string): Promise<ActionResult> {
+  const supabase = await createClient();
+  const { error } = await supabase.from("effort_estimates").delete().eq("work_item_id", workItemId).eq("origin", "user");
+  return error ? fail(error.message) : done();
+}
