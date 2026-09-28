@@ -32,13 +32,14 @@ function scripted(turns: { content: unknown[]; stop_reason: string }[]) {
 }
 
 describe.skipIf(!available)("runChat (integration, fake model)", () => {
-  const admin = adminDb();
+  let admin: ReturnType<typeof adminDb>;
   let db: Awaited<ReturnType<typeof userSession>>["client"];
   let userId: string;
   let runChat: typeof import("./agent").runChat;
   let undoTool: typeof import("./tools").undoTool;
 
   beforeAll(async () => {
+    admin = adminDb();
     ({ client: db, userId } = await userSession(admin));
     ({ runChat } = await import("./agent"));
     ({ undoTool } = await import("./tools"));
