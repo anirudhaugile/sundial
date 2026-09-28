@@ -1,0 +1,137 @@
+@import "tailwindcss";
+
+/*
+ * Sundial design tokens.
+ * Light: warm paper. Dark: warm near-black. One accent (sun amber).
+ * Course/habit tints are soft and only used as small fills + a left rule.
+ */
+:root {
+  --bg: #f7f5f0;
+  --surface: #fcfbf8;
+  --surface-2: #f1eee7;
+  --line: rgb(48 38 24 / 0.09);
+  --line-strong: rgb(48 38 24 / 0.16);
+  --fg: #1f1c17;
+  --muted: #6b645a;
+  --subtle: #9b9387;
+  --accent: #b8621b;
+  --accent-fg: #fffaf3;
+  --accent-soft: rgb(184 98 27 / 0.1);
+  --danger: #b42318;
+  --danger-soft: rgb(180 35 24 / 0.08);
+  --warn: #9a6700;
+  --warn-soft: rgb(154 103 0 / 0.1);
+  --ok: #3f7a4f;
+  --ring: rgb(184 98 27 / 0.35);
+
+  --c-sage: #5f7f64;   --c-sage-bg: #e9efe6;
+  --c-sky: #4f7596;    --c-sky-bg: #e5edf3;
+  --c-clay: #a4593c;   --c-clay-bg: #f4e6de;
+  --c-plum: #7b5a86;   --c-plum-bg: #efe7f1;
+  --c-sand: #8c7440;   --c-sand-bg: #f2ecdc;
+  --c-rose: #a4546a;   --c-rose-bg: #f5e6ea;
+  --c-slate: #5c6670;  --c-slate-bg: #e9ebed;
+  --c-moss: #6c7a3a;   --c-moss-bg: #ecefdd;
+}
+
+@media (prefers-color-scheme: dark) {
+  :root {
+    --bg: #0f0e0c;
+    --surface: #171613;
+    --surface-2: #1f1d19;
+    --line: rgb(255 244 228 / 0.08);
+    --line-strong: rgb(255 244 228 / 0.15);
+    --fg: #ece8e0;
+    --muted: #a39b8f;
+    --subtle: #767065;
+    --accent: #e3a15f;
+    --accent-fg: #1a1208;
+    --accent-soft: rgb(227 161 95 / 0.13);
+    --danger: #f0857a;
+    --danger-soft: rgb(240 133 122 / 0.1);
+    --warn: #e6c071;
+    --warn-soft: rgb(230 192 113 / 0.1);
+    --ok: #8fc49b;
+    --ring: rgb(227 161 95 / 0.4);
+
+    --c-sage: #9dbfa2;   --c-sage-bg: rgb(157 191 162 / 0.12);
+    --c-sky: #93b6d4;    --c-sky-bg: rgb(147 182 212 / 0.12);
+    --c-clay: #e0a287;   --c-clay-bg: rgb(224 162 135 / 0.12);
+    --c-plum: #c3a3cf;   --c-plum-bg: rgb(195 163 207 / 0.12);
+    --c-sand: #d6bf87;   --c-sand-bg: rgb(214 191 135 / 0.12);
+    --c-rose: #e0a0b2;   --c-rose-bg: rgb(224 160 178 / 0.12);
+    --c-slate: #a9b3bd;  --c-slate-bg: rgb(169 179 189 / 0.12);
+    --c-moss: #bcc98a;   --c-moss-bg: rgb(188 201 138 / 0.12);
+  }
+}
+
+@theme inline {
+  --color-bg: var(--bg);
+  --color-surface: var(--surface);
+  --color-surface-2: var(--surface-2);
+  --color-line: var(--line);
+  --color-line-strong: var(--line-strong);
+  --color-fg: var(--fg);
+  --color-muted: var(--muted);
+  --color-subtle: var(--subtle);
+  --color-accent: var(--accent);
+  --color-accent-fg: var(--accent-fg);
+  --color-accent-soft: var(--accent-soft);
+  --color-danger: var(--danger);
+  --color-danger-soft: var(--danger-soft);
+  --color-warn: var(--warn);
+  --color-warn-soft: var(--warn-soft);
+  --color-ok: var(--ok);
+  --color-ring: var(--ring);
+  --font-sans: var(--font-geist-sans);
+  --font-mono: var(--font-geist-mono);
+  --ease-out-soft: cubic-bezier(0.22, 1, 0.36, 1);
+}
+
+html {
+  color-scheme: light dark;
+  -webkit-tap-highlight-color: transparent;
+}
+
+body {
+  background: var(--bg);
+  color: var(--fg);
+  font-family: var(--font-geist-sans), ui-sans-serif, system-ui, sans-serif;
+  font-feature-settings: "ss01", "cv11";
+  text-rendering: optimizeLegibility;
+}
+
+::selection {
+  background: var(--accent-soft);
+}
+
+:focus-visible {
+  outline: 2px solid var(--ring);
+  outline-offset: 2px;
+  border-radius: 6px;
+}
+
+/* tint helpers: .tint-sage etc. set --tint / --tint-bg for any child to use */
+.tint-sage  { --tint: var(--c-sage);  --tint-bg: var(--c-sage-bg); }
+.tint-sky   { --tint: var(--c-sky);   --tint-bg: var(--c-sky-bg); }
+.tint-clay  { --tint: var(--c-clay);  --tint-bg: var(--c-clay-bg); }
+.tint-plum  { --tint: var(--c-plum);  --tint-bg: var(--c-plum-bg); }
+.tint-sand  { --tint: var(--c-sand);  --tint-bg: var(--c-sand-bg); }
+.tint-rose  { --tint: var(--c-rose);  --tint-bg: var(--c-rose-bg); }
+.tint-slate { --tint: var(--c-slate); --tint-bg: var(--c-slate-bg); }
+.tint-moss  { --tint: var(--c-moss);  --tint-bg: var(--c-moss-bg); }
+
+@keyframes rise {
+  from { opacity: 0; transform: translateY(4px); }
+  to   { opacity: 1; transform: none; }
+}
+.animate-rise {
+  animation: rise 320ms var(--ease-out-soft) both;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  *, *::before, *::after {
+    animation-duration: 1ms !important;
+    transition-duration: 1ms !important;
+  }
+}
