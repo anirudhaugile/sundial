@@ -3,9 +3,9 @@
 import { revalidatePath } from "next/cache";
 import { createClient } from "@/lib/supabase/server";
 import { requireProfile } from "@/lib/data/queries";
-import { createProposal } from "@/lib/planner/run";
+import { planNow } from "@/lib/planner/pipeline";
 
-type Result = { ok: true } | { ok: false; error: string };
+type Result = { ok: true; warning?: string } | { ok: false; error: string };
 const done = (): Result => {
   revalidatePath("/", "layout");
   return { ok: true };
@@ -15,8 +15,11 @@ export async function runPlanner(): Promise<Result> {
   const supabase = await createClient();
   const { user } = await requireProfile(supabase);
   try {
-    await createProposal(supabase, user.id, "manual");
-    return done();
+    const { sync } = await planNow(supabase, user.id, "manual");
+    const failed = sync.filter((s) => !s.ok);
+    revalidatePath("/", "layout");
+    // a failed source doesn't block planning with what we already have
+    return failed.length ? { ok: true, warning: `Planned with cached data — ${failed.map((f) => f.error).join(" ")}` } : { ok: true };
   } catch (e) {
     return { ok: false, error: e instanceof Error ? e.message : "Planner failed" };
   }

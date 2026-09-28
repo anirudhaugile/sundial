@@ -1,5 +1,6 @@
 import type { Metadata } from "next";
 import { DateTime } from "luxon";
+import { Sparkles } from "lucide-react";
 import { NewButton } from "@/components/quick-add";
 import { TodayView, type DueRow, type OverdueRow, type TodoRow } from "@/components/today-view";
 import { getCourses, getHabits, getToday, getWorkItemsById, requireProfile } from "@/lib/data/queries";
@@ -16,7 +17,7 @@ export default async function TodayPage() {
   const now = DateTime.now().setZone(tz);
   const nowISO = now.toUTC().toISO()!;
 
-  const [data, courses, habits, upcomingRes] = await Promise.all([
+  const [data, courses, habits, upcomingRes, { data: proposal }] = await Promise.all([
     getToday(supabase, now),
     getCourses(supabase),
     getHabits(supabase, { includeRetired: true }),
@@ -29,6 +30,7 @@ export default async function TodayPage() {
       .lte("due_at", now.plus({ days: 7 }).toUTC().toISO()!)
       .order("due_at")
       .limit(6),
+    supabase.from("plan_runs").select("id, trigger, summary").eq("status", "proposed").maybeSingle(),
   ]);
   const upcomingItems = upcomingRes.data ?? [];
 
@@ -117,6 +119,19 @@ export default async function TodayPage() {
         <p className="mt-3 text-[15px] leading-relaxed text-muted">{summaryLine(agenda.length, workMin, dueToday, overdue.length)}</p>
 
         {next ? <UpNext item={next} now={now} tz={tz} /> : null}
+        {proposal ? (
+          <a
+            href="/plan"
+            className="mt-3 flex items-center gap-3 rounded-2xl border border-dashed border-line-strong px-5 py-3 text-sm transition-colors hover:border-accent hover:bg-surface"
+          >
+            <Sparkles size={15} className="shrink-0 text-accent" />
+            <span className="flex-1 text-muted">
+              {proposal.trigger === "cron" ? "This morning's plan is ready." : "A plan is waiting for your review."}
+              {(proposal.summary as { conflictCount?: number })?.conflictCount ? " It has conflicts to look at." : ""}
+            </span>
+            <span className="font-medium text-fg">Review</span>
+          </a>
+        ) : null}
       </header>
 
       <TodayView tz={tz} nowISO={nowISO} agenda={agenda} todos={todos} overdue={overdue} upcoming={upcoming} />

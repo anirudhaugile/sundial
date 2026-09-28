@@ -24,18 +24,20 @@ export async function buildSchedulerInput(supabase: DB, userId: string, opts: { 
   const endISO = horizonEnd.toUTC().toISO()!;
 
   const [habits, events, blocks, items] = await Promise.all([
-    supabase.from("habits").select("*").is("retired_at", null),
-    supabase.from("events").select("id, starts_at, ends_at, busy").is("removed_at", null).lt("starts_at", endISO).gt("ends_at", now.startOf("day").toUTC().toISO()!),
+    supabase.from("habits").select("*").eq("user_id", userId).is("retired_at", null),
+    supabase.from("events").select("id, starts_at, ends_at, busy").eq("user_id", userId).is("removed_at", null).lt("starts_at", endISO).gt("ends_at", now.startOf("day").toUTC().toISO()!),
     // blocks the scheduler must respect: locked future blocks and everything done
     supabase
       .from("blocks")
       .select("*")
+      .eq("user_id", userId)
       .or("locked.eq.true,status.eq.done")
       .in("status", ["scheduled", "done"])
       .gte("ends_at", now.minus({ days: 90 }).toUTC().toISO()!),
     supabase
       .from("work_items")
       .select("*")
+      .eq("user_id", userId)
       .eq("status", "open")
       .is("removed_at", null)
       .not("due_at", "is", null)
@@ -97,8 +99,12 @@ export async function createProposal(supabase: DB, userId: string, trigger: "man
   const out = schedule(input);
 
   // one proposal at a time: replace any pending one
-  const { data: pending } = await supabase.from("plan_runs").select("id").eq("status", "proposed");
-  for (const p of pending ?? []) await supabase.rpc("discard_plan", { run_id: p.id });
+  // (done directly rather than via discard_plan() so this also works for cron's service-role client)
+  const { data: pending } = await supabase.from("plan_runs").select("id").eq("user_id", userId).eq("status", "proposed");
+  for (const p of pending ?? []) {
+    await supabase.from("blocks").delete().eq("user_id", userId).eq("plan_run_id", p.id).eq("status", "proposed");
+    await supabase.from("plan_runs").update({ status: "discarded", decided_at: new Date().toISOString() }).eq("id", p.id).eq("user_id", userId);
+  }
 
   const byId = new Map(work.map((w) => [w.id, w]));
   const summary: PlanSummary = {

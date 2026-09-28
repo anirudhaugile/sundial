@@ -46,11 +46,12 @@ export function PlanReview({ tz, nowISO, runId, createdAt, blocks, removed, conf
   const [pending, start] = useTransition();
   const [error, setError] = useState<string | null>(null);
   const now = DateTime.fromISO(nowISO).setZone(tz);
-  const run = (fn: () => Promise<{ ok: boolean; error?: string }>) =>
+  const run = (fn: () => Promise<{ ok: boolean; error?: string; warning?: string }>) =>
     start(async () => {
       setError(null);
       const r = await fn();
       if (!r.ok) setError(r.error ?? "Something went wrong");
+      else if (r.warning) setError(r.warning);
     });
 
   // group proposal + removals by day
@@ -349,6 +350,7 @@ export function PlanEmpty({ hasApproved, lastApproved, horizon }: { hasApproved:
           start(async () => {
             const r = await runPlanner();
             if (!r.ok) setError(r.error);
+            else if (r.warning) setError(r.warning);
           })
         }
       >

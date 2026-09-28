@@ -4,6 +4,7 @@ import { PageHeader } from "@/components/ui";
 const TABS = [
   { href: "/settings", label: "Preferences" },
   { href: "/settings/habits", label: "Habits" },
+  { href: "/settings/sources", label: "Sources" },
   { href: "/settings/courses", label: "Courses" },
 ];
 
